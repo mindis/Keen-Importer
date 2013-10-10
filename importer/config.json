@@ -1,0 +1,26 @@
+{
+
+    "debug": false,
+    "verbose": true,
+
+    "keen": {
+        "project_id": null,
+        "read_key": null,
+        "write_key": null
+    },
+
+    "mixpanel": {
+        "api_key": null,
+        "api_secret": null,
+        "timezone": "America/Los_Angeles"
+    },
+
+    "importer": {
+        "from": "mixpanel",
+        "to": "keen",
+
+        "kinds": []
+
+    }
+
+}

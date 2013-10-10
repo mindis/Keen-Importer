@@ -1,0 +1,14 @@
+.Python
+.git-old/*
+bin/*
+include/*
+lib/*
+man/*.pyc
+man/*
+*.pyc
+*.pyo
+*.DS_Store
+src/lib/*
+docs/html/*
+.coverage
+.data/*
