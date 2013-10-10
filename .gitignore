@@ -1,0 +1,7 @@
+*.pyc
+*.pyo
+*.DS_Store
+src/lib/*
+docs/html/*
+.coverage
+.data/*
