@@ -10,8 +10,6 @@ which will install dependencies (namely, Mixpanel's Python library).
 Keen's Python library is expected to be available on the system,
 such that *import keen* will work fine.
 
-**Currently, only *Mixpanel* -> *Keen* is supported.**
-
 
 *Installation*
 
