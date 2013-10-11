@@ -9,7 +9,30 @@
 
     usage: ``python mixpanel -h``
     (from outside the project directory)
+
+    :author: Sam Gammon <sam@keen.io>
+    :license: This software follows the MIT (OSI-approved)
+              license for open source software. A truncated
+              version is included here; for full licensing
+              details, see ``LICENSE.md`` in the root directory
+              of the project.
+
+              Copyright (c) 2013, Keen IO
+
+              The above copyright notice and this permission notice shall be included in
+              all copies or substantial portions of the Software.
+
+              THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+              IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+              FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+              AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+              LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+              THE SOFTWARE.
+
 '''
+
+__version__ = (1, 1)
 
 # stdlib
 import os
@@ -70,8 +93,18 @@ _FROM_KEEN_DATE = lambda spec: timezone('UTC').localize(datetime.strptime('-'.jo
 _TO_MIXPANEL_DATE = lambda _date: _date.strftime(_MIXPANEL_DATE_FMT)
 _FROM_MIXPANEL_DATE = lambda spec: datetime.strptime(spec, _MIXPANEL_DATE_FMT)
 
+# `PROVIDERS`: global list of installed providers
+PROVIDERS = {}
+
 
 # +=+=+=+ Abstract Classes +=+=+=+ #
+
+class Providers:
+
+    ''' Enumerates available event providers. '''
+
+    pass
+
 
 class Provider(object):
 
@@ -80,7 +113,33 @@ class Provider(object):
         :py:class:`Downloader` class that
         (together) add a provider for ``Importer``. '''
 
-    __metaclass__ = abc.ABCMeta
+    class __metaclass__(abc.ABCMeta):
+
+        ''' Provider-specific metaclass that registers
+            new providers globally. '''
+
+        def __new__(cls, name, bases, properties):
+
+            ''' Construct new provider and register
+                with global dict of providers.
+
+                :param name: Class name for construction.
+                :param bases: Class bases for construction.
+                :param properties: Class-level property map for construction.
+                :returns: Constructed :py:class:`Provider` class. '''
+
+            global PROVIDERS
+
+            # construct class (careful of the ABC inheritance tree)
+            klass = super(cls, cls).__new__(cls, name, bases, properties)
+
+            # don't register root provider
+            if name is 'Provider': return klass
+
+            # register, install & return
+            PROVIDERS[name] = klass
+            setattr(Providers, name.upper(), name.upper())
+            return PROVIDERS[name]
 
     bus = None  # reference upwards to ``Importer``
     lib = None  # library for this provider
@@ -867,14 +926,6 @@ class MixpanelDownloader(Downloader):
 
 # +=+=+=+ Importer +=+=+=+ #
 
-class Providers:
-
-    ''' Enumerates available event providers. '''
-
-    KEEN = 'KEEN'
-    MIXPANEL = 'MIXPANEL'
-
-
 class Importer(object):
 
     ''' Logic to stitch :py:class:`Uploader` and
@@ -886,6 +937,7 @@ class Importer(object):
     yes = True  # assume `yes` to all prompts
     debug = False  # whether debug mode is active
     quiet = False  # whether quiet mode is active
+    argset = None  # arguments passed to us via command line
     log_level = logging.INFO  # default logging level
     log_format = "%(levelname)s [importer]: %(message)s"  # format string for logs
 
@@ -986,10 +1038,16 @@ class Importer(object):
 
         if not self.__config:
 
+            # resolve configuration path
+            if self.argset and hasattr(self.argset, 'config_file') and self.argset.config_file:
+                config_path = self.argset.config_file
+            else:
+                config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
             # try loading config
             try:
                 self.logging.debug("Loading 'config.json'...")
-                with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config_handle:
+                with open(config_path, 'r') as config_handle:
                     self.__config = json.loads(config_handle.read())
 
             except (IOError, OSError, ValueError, TypeError) as e:  # pragma: nocover
@@ -1322,7 +1380,7 @@ class Importer(object):
             ``0`` is returned to indicate no error,
             otherwise ``1`` is returned. '''
 
-        self.cli, self.debug = True, self.config.get('debug', False)  # setup CLI and debug mode
+        self.cli, self.argset, self.debug = True, cli, self.config.get('debug', False)  # setup CLI and debug mode
 
         try:
 

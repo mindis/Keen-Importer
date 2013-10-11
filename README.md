@@ -1,17 +1,58 @@
 **keen importer**
 
+*Introduction*
+
 A handy little utility for transferring event data between two
 fine services - *Keen.io* and *Mixpanel*. Functionality is configured
 via command line arguments and *config.json*, which holds API keys
 and other sensitive information.
 
-To get started, simply checkout *Importer* and build with *make*,
-which will install dependencies (namely, Mixpanel's Python library).
+To get started you have a choice: build from source or install a release build.
+To build from source, simply checkout *Importer* and build with *make*,
+which will install dependencies (namely, Mixpanel's Python library and `pytz`).
 Keen's Python library is expected to be available on the system,
 such that *import keen* will work fine.
 
+To install via *Pip*:
 
-*Installation*
+	pip install importer
+
+
+*Configuration*
+
+*Importer* needs a config.json, that holds your API keys for various providers,
+along with settings. Here's what a `config.json` file usually looks like:
+
+	{
+	    "debug": false,
+	    "verbose": true,
+	    
+	    "keen": {  // settings for keen! :)
+	        "project_id": null,
+	        "read_key": null,
+	        "write_key": null
+	    },
+	    
+	    "mixpanel": {  // settings for mixpanel
+	        "api_key": null,
+	        "api_secret": null,
+	        "timezone": "America/Los_Angeles"
+	    },
+	    
+	    "importer": {  // settings for the importer itself
+	        "from": "mixpanel",
+	        "to": "keen",
+	        "kinds": []
+	    }
+	}
+
+
+*Installation from PyPI*
+
+	sudo pip install keen importer
+
+
+*Installation from source*
 
 	sudo pip install keen
 	git clone https://github.com/keenlabs/Keen-Importer.git

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#
+#  Keen Importer - entrypoint script
+#
+
+python `python -c "import os, importer; print os.path.dirname(importer.__file__)"`

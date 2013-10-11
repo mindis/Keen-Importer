@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__doc__ = """
+__doc__ = '''
 
     `importer`:
 
@@ -14,9 +14,30 @@ __doc__ = """
     command line flags override entries in
     `config.json`.
 
-"""
+    :author: Sam Gammon <sam@keen.io>
+    :license: This software follows the MIT (OSI-approved)
+              license for open source software. A truncated
+              version is included here; for full licensing
+              details, see ``LICENSE.md`` in the root directory
+              of the project.
 
-__version__ = (1, 0)
+              Copyright (c) 2013, Keen IO
+
+              The above copyright notice and this permission notice shall be included in
+              all copies or substantial portions of the Software.
+
+              THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+              IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+              FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+              AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+              LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+              THE SOFTWARE.
+
+'''
+
+__version__ = (1, 1)
+__author__ = "Sam Gammon <sam@keen.io"
 
 
 # stdlib
@@ -26,6 +47,7 @@ import logging
 import argparse
 
 # importer
+import mix
 from mix import Importer
 
 # logging
@@ -54,6 +76,10 @@ except ImportError:  # pragma: nocover
         sys.exit(1)  # exit with error
 
 
+# provider choice names
+_provider_choices = frozenset(map(lambda x: x.lower(), mix.PROVIDERS.iterkeys()))
+
+
 ## == Command line parser
 parser = argparse.ArgumentParser(description=__doc__)
 
@@ -67,13 +93,17 @@ parser.add_argument('begin', metavar='BEGIN', type=unicode,
 parser.add_argument('end', metavar='END', type=unicode,
                     help='end of event range to fetch (YYYY-MM-DD)')
 
+# config file
+parser.add_argument('--config', '-c', dest='config_file', type=unicode,
+                    help='config.json file with keys and settings', required=False)
+
 # source provider
 parser.add_argument('--from', '-f', dest='source', type=unicode,
-                    help='provider name to get events from', choices=frozenset(('keen', 'mixpanel')), required=False)
+                    help='provider name to get events from', choices=_provider_choices, required=False)
 
 # destination provider
 parser.add_argument('--to', '-t', dest='target', type=unicode,
-                    help='provider name to send events to', choices=frozenset(('keen', 'mixpanel')), required=False)
+                    help='provider name to send events to', choices=_provider_choices, required=False)
 
 # event kinds
 parser.add_argument('--kind', '-k', dest='kind', type=unicode, nargs='+',
@@ -100,6 +130,9 @@ parser.add_argument('--version', '-V', action='version',
                     help='print importer\'s version and exit', version='importer %s' % '.'.join(map(unicode, __version__)))
 
 
+## == Importer! :)
+run = lambda: sys.exit(Importer(keen=keen, mixpanel=mixpanel)(**vars(parser.parse_args())))
+
+
 if __name__ == '__main__':  # pragma: nocover
-    ## == Importer! :)
-    sys.exit(Importer(keen=keen, mixpanel=mixpanel)(**vars(parser.parse_args())))
+    run()

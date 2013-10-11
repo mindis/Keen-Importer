@@ -1,6 +1,5 @@
 .Python
 .git-old/*
-bin/*
 include/*
 lib/*
 man/*.pyc
