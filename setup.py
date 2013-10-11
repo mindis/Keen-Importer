@@ -37,7 +37,7 @@ setup(name="importer",
       scripts=["bin/importer"],
       author_email="sam@keen.io",
       url="https://github.com/keenlabs/Keen-Importer",
-      packages=["importer", "importer_tests"],
+      packages=["importer", "importer_tests", "importer.lib.mixpanel"],
       install_requires=["keen", "pytz"],
       tests_require=["nose"]
 )
