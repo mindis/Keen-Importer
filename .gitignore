@@ -11,3 +11,4 @@ src/lib/*
 docs/html/*
 .coverage
 .data/*
+bin/*
