@@ -4,4 +4,7 @@
 #  Keen Importer - entrypoint script
 #
 
-python `python -c "import os, importer; print os.path.dirname(importer.__file__)"`
+if [ -x ./python ]; then
+
+
+echo "python `python -c "import os, importer; print os.path.dirname(importer.__file__)"` `shift echo $*`"

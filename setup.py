@@ -38,6 +38,6 @@ setup(name="importer",
       author_email="sam@keen.io",
       url="https://github.com/keenlabs/Keen-Importer",
       packages=["importer", "importer_tests"],
-      install_requires=["mixpanel", "keen", "pytz"],
+      install_requires=["keen", "pytz"],
       tests_require=["nose"]
 )
