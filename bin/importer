@@ -4,7 +4,12 @@
 #  Keen Importer - entrypoint script
 #
 
+# resolve us an interpreter
 if [ -x ./python ]; then
+	IMPORTER_PYTHON=./python
+else
+	IMPORTER_PYTHON=$(which python)
+fi
 
-
-echo "python `python -c "import os, importer; print os.path.dirname(importer.__file__)"` `shift echo $*`"
+# run importer! :)
+$IMPORTER_PYTHON `python -c 'import os, importer; print os.path.dirname(importer.__file__)'` $*

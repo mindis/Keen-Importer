@@ -55,7 +55,8 @@ logging.basicConfig(format=Importer.log_format)
 
 # dependencies
 try:
-    import keen, mixpanel  # try to grab libs globally
+    import keen
+    import mixpanel  # try to grab libs globally
 
 except ImportError:  # pragma: nocover
 
@@ -69,11 +70,18 @@ except ImportError:  # pragma: nocover
 
     except ImportError:  # pragma: nocover
 
-        # no dependencies: can't go on
-        logging.critical('Dependencies `keen` and `mixpanel` are missing. '
-                         'Please run `make` or `pip install keen mixpanel`.')
+        try:  # try to grab them manually from `lib`
+            if 'keen' not in globals():
+                from lib import keen
+            if 'mixpanel' not in globals():
+                from lib.mixpanel import mixpanel
 
-        sys.exit(1)  # exit with error
+        except ImportError:
+            # no dependencies: can't go on
+            logging.critical('Dependencies `keen` and `mixpanel` are missing. '
+                             'Please run `make` or `pip install keen mixpanel`.')
+
+            sys.exit(1)  # exit with error
 
 
 # provider choice names

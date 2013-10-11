@@ -2,7 +2,6 @@
 .git-old/*
 include/*
 lib/*
-bin/*
 man/*.pyc
 man/*
 *.pyc
