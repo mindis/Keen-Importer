@@ -66,7 +66,7 @@ The following example transfers events of kind "Video Play" from
 *Mixpanel* to *Keen*, that were submitted between the dates
 *July 1st, 2013* and *August 1th, 2013*:
 
-	python importer 2013-07-01 2013-08-01 --from mixpanel --to keen --kind "Video Play"
+	python importer 2013-07-01 2013-08-01 --from mixpanel --to keen --kind "Video Play" --config your_config.json
 
 
 *Documentation*
