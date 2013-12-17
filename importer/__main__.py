@@ -37,7 +37,7 @@ __doc__ = '''
 '''
 
 __version__ = (1, 1)
-__author__ = "Sam Gammon <sam@keen.io"
+__author__ = "Sam Gammon <sam@keen.io>"
 
 
 # stdlib

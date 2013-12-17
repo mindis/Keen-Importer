@@ -103,7 +103,8 @@ class Providers:
 
     ''' Enumerates available event providers. '''
 
-    pass
+    KEEN = 'keen'
+    MIXPANEL = 'mixpanel'
 
 
 class Provider(object):
@@ -764,7 +765,7 @@ class Mixpanel(Provider):
         self.logging.debug('Switched Mixpanel endpoint to "%s".' % self.client.ENDPOINT)
 
         if traceback: raise  # always re-raise exceptions (we can't stop, this is bat country)
-        
+
         return self
 
     # `__enter__`/`__exit__`: co-opt Python's `with` for endpoint switching
@@ -890,7 +891,7 @@ class MixpanelDownloader(Downloader):
             else:  # no error ocurred: parse newline-separated JSON events
                 event_count, error_count, ignore_errors = 0, 0, False
                 for event in filter(lambda x: x, result.split("\n")):  # (subtly filter out falsy empty strings)
-                    
+
                     event_count += 1
                     self.logging.debug('Got raw event: "%s".' % event)
 
@@ -1042,7 +1043,7 @@ class Importer(object):
             if self.argset and hasattr(self.argset, 'config_file') and self.argset.config_file:
                 config_path = self.argset.config_file
             else:
-                config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+                config_path = os.path.join(os.getcwd(), 'config.json')
 
             # try loading config
             try:
@@ -1243,7 +1244,7 @@ class Importer(object):
 
         # grab kinds, to/from providers
         kinds, source, target, reset_ts = [arguments[x] for x in ('kinds', 'from', 'to', 'reset_ts')]
-        
+
         # resolve provider object
         source, target = self.provider(source), self.provider(target)
         self.logging.debug('Providers: SOURCE(%s) -> TARGET(%s)' % (source, target))
@@ -1380,7 +1381,8 @@ class Importer(object):
             ``0`` is returned to indicate no error,
             otherwise ``1`` is returned. '''
 
-        self.cli, self.argset, self.debug = True, cli, self.config.get('debug', False)  # setup CLI and debug mode
+        self.cli, self.argset = True, cli
+        self.debug = self.config.get('debug', False)  # setup CLI and debug mode
 
         try:
 

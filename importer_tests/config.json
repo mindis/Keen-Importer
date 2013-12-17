@@ -1,0 +1,22 @@
+{
+    "debug": true,
+    "verbose": true,
+
+    "keen": {
+        "project_id": "test",
+        "read_key": "test",
+        "write_key": "test"
+    },
+
+    "mixpanel": {
+        "api_key": "<our mixpanel key>",
+        "api_secret": "<our mixpanel secret>",
+        "timezone": "America/Los_Angeles"
+    },
+
+    "importer": {
+        "from": "mixpanel",
+        "to": "keen",
+        "kinds": ["impressions", "events"]
+    }
+}
