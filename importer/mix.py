@@ -872,6 +872,7 @@ class MixpanelDownloader(Downloader):
 
         with self.provider as mixpanel:  # enter `export` mode, which switches endpoints
 
+            # XXX This is likely a problem, as the whole damned download is in result here...
             # export events for each kind in the date range
             result = mixpanel.client.request(['export'], {
                 'from_date': _TO_MIXPANEL_DATE(begin),
@@ -890,6 +891,8 @@ class MixpanelDownloader(Downloader):
 
             else:  # no error ocurred: parse newline-separated JSON events
                 event_count, error_count, ignore_errors = 0, 0, False
+                # XXX Again, result here has ALL the results in it. This should probably be written
+                # XXX to disk then read with for line in open('file')
                 for event in filter(lambda x: x, result.split("\n")):  # (subtly filter out falsy empty strings)
 
                     event_count += 1
@@ -1328,12 +1331,20 @@ class Importer(object):
 
                 target.uploader.upload(kind, target.uploader.pre_process(data), _FROM_INTERNAL_DT(timestamp) if not reset_ts else None)  # extract row data and upload
 
+                # XXX The try/commit below should likely be up here, conditionally
+                # invoked around the event_count value.
+
             # dispatch commit(), if available
             try:
+                # XXX Looks like this only supports a single add_events call? Shouldn't it be iterative?
                 self.say('Committing events...')
                 target.uploader.commit()
+                # XXX We could write out the event_count var here to a state file to "resume" uploads
+                # and deal with issues.
             except NotImplementedError:  # pragma: nocover
                 self.logging.critical('Failed to commit events.')
+                # XXX Right about here we could emit the event position we failed
+                # XXX at so that malformed things can be located.
 
             self.say('Upload complete.')
             self.logging.info('Transferred %s events to %s.' % (str(event_count), target.name.capitalize()))
