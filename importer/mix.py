@@ -44,6 +44,7 @@ import json
 import base64
 import string
 import logging
+import tempfile
 
 # timezone data
 from tz import timezone
@@ -872,8 +873,7 @@ class MixpanelDownloader(Downloader):
 
         with self.provider as mixpanel:  # enter `export` mode, which switches endpoints
 
-            # XXX This is likely a problem, as the whole damned download is in result here...
-            # export events for each kind in the date range
+            # XXX Mixpanel doesn't stream to disk, so this won't work for big stuff.
             result = mixpanel.client.request(['export'], {
                 'from_date': _TO_MIXPANEL_DATE(begin),
                 'to_date': _TO_MIXPANEL_DATE(end),
@@ -891,41 +891,49 @@ class MixpanelDownloader(Downloader):
 
             else:  # no error ocurred: parse newline-separated JSON events
                 event_count, error_count, ignore_errors = 0, 0, False
-                # XXX Again, result here has ALL the results in it. This should probably be written
-                # XXX to disk then read with for line in open('file')
-                for event in filter(lambda x: x, result.split("\n")):  # (subtly filter out falsy empty strings)
 
-                    event_count += 1
-                    self.logging.debug('Got raw event: "%s".' % event)
+                # Write mixpanel output to a file so we don't explode.
+                with tempfile.TemporaryFile() as temp:
+                    temp.write(result)
+                    temp.flush()
+                    # Reset the read position so we can start over
+                    temp.seek(0)
+                    for event in temp:
+                        if event:
+                            # Skip Falsy lines
+                            continue
 
-                    try:
+                        event_count += 1
+                        self.logging.debug('Got raw event: "%s".' % event)
 
-                        # try to deserialize
-                        deserialized = json.loads(event)
+                        try:
 
-                    except Exception as e:  # pragma: nocover
+                            # try to deserialize
+                            deserialized = json.loads(event)
 
-                        self.logging.debug('Encountered JSON exception: "%s".' % str(e))
-                        self.logging.error('Failed to decode JSON from blob.')
+                        except Exception as e:  # pragma: nocover
 
-                        # prompt for what to do from here
-                        if (not ignore_errors) and self.provider.bus.prompt("\n\n`Importer` encountered an issue decoding the following blob:\n%s\n" % event, "Ignore errors?"):
-                            ignore_errors = True
+                            self.logging.debug('Encountered JSON exception: "%s".' % str(e))
+                            self.logging.error('Failed to decode JSON from blob.')
 
-                        # fail if we've tried more than 5 times and every time has failed
-                        error_count += 1
-                        if (event_count > 5) and error_count == event_count:
-                            raise RuntimeError(' '.join(('Mixpanel:', 'too many errors.')))
+                            # prompt for what to do from here
+                            if (not ignore_errors) and self.provider.bus.prompt("\n\n`Importer` encountered an issue decoding the following blob:\n%s\n" % event, "Ignore errors?"):
+                                ignore_errors = True
 
-                    else:
+                            # fail if we've tried more than 5 times and every time has failed
+                            error_count += 1
+                            if (event_count > 5) and error_count == event_count:
+                                raise RuntimeError(' '.join(('Mixpanel:', 'too many errors.')))
 
-                        # convert to python datetime
-                        ts = deserialized['properties']['time']
-                        if isinstance(ts, int):
-                            ts = datetime.fromtimestamp(ts)
+                        else:
 
-                        # yield event to caller
-                        yield (deserialized['event'], deserialized['properties'], self.provider.timezone.localize(ts).astimezone(self.utc))
+                            # convert to python datetime
+                            ts = deserialized['properties']['time']
+                            if isinstance(ts, int):
+                                ts = datetime.fromtimestamp(ts)
+
+                            # yield event to caller
+                            yield (deserialized['event'], deserialized['properties'], self.provider.timezone.localize(ts).astimezone(self.utc))
 
 
 # +=+=+=+ Importer +=+=+=+ #
