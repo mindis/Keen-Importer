@@ -76,7 +76,7 @@ class MixpanelTests(unittest.TestCase):
 
             self.mock_request = (methods, params)
             if 'export' in methods:
-                return "\n".join([
+                return iter([
                     json.dumps({'event':'sample_kind','properties':{
                         'time': int(time.mktime(self.random_ts().timetuple())),
                         'blabs': True

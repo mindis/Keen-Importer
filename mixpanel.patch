@@ -1,0 +1,19 @@
+--- importer/lib/mixpanel/mixpanel.py	2014-02-14 09:47:19.000000000 -0800
++++ importer/lib/mixpanel/mixpanel.py	2014-02-14 09:53:48.000000000 -0800
+@@ -49,10 +49,13 @@
+ 
+         request_url = '/'.join([self.ENDPOINT, str(self.VERSION)] + methods) + '/?' + self.unicode_urlencode(params)
+ 
+-        request = urllib.urlopen(request_url)
+-        data = request.read()
++        if 'export' in methods:
++            return urllib.urlopen(request_url)
++        else:
++            request = urllib.urlopen(request_url)
++            data = request.read()
+ 
+-        return json.loads(data)
++            return json.loads(data)
+ 
+     def unicode_urlencode(self, params):
+         """

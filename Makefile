@@ -22,9 +22,7 @@ lib/mixpanel:
 	@curl --progress-bar https://mixpanel.com/site_media//api/v2/mixpanel.py > importer/lib/mixpanel/mixpanel.py
 
 	# patch some jank
-	@sed 's/json.loads/str/g' ./importer/lib/mixpanel/mixpanel.py > ./importer/lib/mixpanel/mixpanel_patched.py
-	@rm -f ./importer/lib/mixpanel/mixpanel.py
-	@mv -f ./importer/lib/mixpanel/mixpanel_patched.py ./importer/lib/mixpanel/mixpanel.py
+	@patch -p0 < mixpanel.patch
 
 requirements:
 	@echo "Installing dependencies..."
