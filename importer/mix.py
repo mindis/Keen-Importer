@@ -679,7 +679,7 @@ class KeenUploader(Uploader):
             self.provider.lib.add_events(self.events_by_kind)  # add the events to Keen (this results in a web request)
         )
 
-        # Clear out the events by kinda map so we can start
+        # Clear out the events-by-kind map so we can start
         # over after committing.
         self.events_by_kind = {}
 
