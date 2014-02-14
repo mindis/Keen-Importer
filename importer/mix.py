@@ -679,6 +679,10 @@ class KeenUploader(Uploader):
             self.provider.lib.add_events(self.events_by_kind)  # add the events to Keen (this results in a web request)
         )
 
+        # Clear out the events by kinda map so we can start
+        # over after committing.
+        self.events_by_kind = {}
+
         # return count of events we sent
         return count
 
@@ -894,13 +898,15 @@ class MixpanelDownloader(Downloader):
 
                 # Write mixpanel output to a file so we don't explode.
                 with tempfile.TemporaryFile() as temp:
+
+
                     temp.write(result)
                     temp.flush()
                     # Reset the read position so we can start over
                     temp.seek(0)
                     for event in temp:
-                        if event:
-                            # Skip Falsy lines
+                        if event == "":
+                            # Skip empty lines
                             continue
 
                         event_count += 1
@@ -1339,20 +1345,21 @@ class Importer(object):
 
                 target.uploader.upload(kind, target.uploader.pre_process(data), _FROM_INTERNAL_DT(timestamp) if not reset_ts else None)  # extract row data and upload
 
-                # XXX The try/commit below should likely be up here, conditionally
-                # invoked around the event_count value.
+                # If the count of events matches the batch size, commit!
+                if(event_count % 1000): # This is hardcoded for now to make things easier, XXX - @gphat
+                    try:
+                        self.say('Committing events...')
+                        target.uploader.commit()
+                    except NotImplementedError:  # pragma: nocover
+                        self.logging.critical('Failed to commit events.')
 
-            # dispatch commit(), if available
+            # Now that we're outside of the loop, commit again to catch anything
+            # else we have lying around.
             try:
-                # XXX Looks like this only supports a single add_events call? Shouldn't it be iterative?
                 self.say('Committing events...')
                 target.uploader.commit()
-                # XXX We could write out the event_count var here to a state file to "resume" uploads
-                # and deal with issues.
             except NotImplementedError:  # pragma: nocover
                 self.logging.critical('Failed to commit events.')
-                # XXX Right about here we could emit the event position we failed
-                # XXX at so that malformed things can be located.
 
             self.say('Upload complete.')
             self.logging.info('Transferred %s events to %s.' % (str(event_count), target.name.capitalize()))
