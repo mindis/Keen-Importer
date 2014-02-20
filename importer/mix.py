@@ -1272,29 +1272,45 @@ class Importer(object):
 
         # calculate buffer file path
         download_buffer_path = os.path.join(os.path.dirname(__file__), _CSV_FILE)
-        self.logging.debug('Buffering downloaded data to "%s"...' % download_buffer_path)
 
-        # open CSV and set up download buffer file
+        # We need a count of events, so init at 0
         event_count = 0
-        with open(download_buffer_path, 'wb') as download_buffer:
+        # We might need to skip some. Look for that.
+        event_skip = arguments.get('skip', 0)
 
-            # get CSV writer
-            writer = csv.writer(download_buffer, **_CSV_PARAMS)
+        # Check to see if the download file from a previous run is still around.
+        if(os.path.isfile(download_buffer_path)):
+            self.logging.info('Download file "%s" already exists, reading from that.' % download_buffer_path)
+            # Count the number of lines in the file.
+            with open(download_buffer_path) as f:
+                for i, l in enumerate(f):
+                    pass
+            event_count = i + 1
 
-            # fetch source events
-            self.say('Beginning event data download...')
-            for kind, data, timestamp in source.downloader.download(begin, end, kinds):
+        else:
+            # Nothing to continue from. Start over!
+            self.logging.debug('Buffering downloaded data to "%s"...' % download_buffer_path)
 
-                event_count += 1
+            # open CSV and set up download buffer file
+            with open(download_buffer_path, 'wb') as download_buffer:
 
-                # log about it
-                self.logging.info('Downloaded "%s" (event #%s @ %s bytes)...' % (kind, event_count, sys.getsizeof(data)))
-                self.logging.debug('Got event data: "%s".' % (str(data)))
+                # get CSV writer
+                writer = csv.writer(download_buffer, **_CSV_PARAMS)
 
-                # write to our buffer file
-                writer.writerow((kind, _TO_INTERNAL_DT(timestamp), json.dumps(source.downloader.post_process(data))))
+                # fetch source events
+                self.say('Beginning event data download...')
+                for kind, data, timestamp in source.downloader.download(begin, end, kinds):
 
-            self.logging.info('Download complete.')
+                    event_count += 1
+
+                    # log about it
+                    self.logging.info('Downloaded "%s" (event #%s @ %s bytes)...' % (kind, event_count, sys.getsizeof(data)))
+                    self.logging.debug('Got event data: "%s".' % (str(data)))
+
+                    # write to our buffer file
+                    writer.writerow((kind, _TO_INTERNAL_DT(timestamp), json.dumps(source.downloader.post_process(data))))
+
+                self.logging.info('Download complete.')
 
         if self.cli:
             time.sleep(2)  # give the user a chance to catch up
@@ -1319,6 +1335,12 @@ class Importer(object):
 
                 event_count += 1
 
+                if(event_skip > 0 and event_count <= event_skip):
+                    # We've not yet exceeded the number we were told to skip. So skip
+                    # this iteration
+                    self.logging.info('Skipping #%s, < %s' % (event_count, event_skip))
+                    continue
+
                 # extract info
                 kind, timestamp, data = event
 
@@ -1328,10 +1350,11 @@ class Importer(object):
                 target.uploader.upload(kind, target.uploader.pre_process(data), _FROM_INTERNAL_DT(timestamp) if not reset_ts else None)  # extract row data and upload
 
                 # If the count of events matches the batch size, commit!
-                if(event_count % 1000): # This is hardcoded for now to make things easier, XXX - @gphat
+                if not event_count % 1000: # This is hardcoded for now to make things easier, XXX - @gphat
                     try:
                         self.say('Committing events...')
                         target.uploader.commit()
+                        self.logging.info('Committed up to event %s' % event_count)
                     except NotImplementedError:  # pragma: nocover
                         self.logging.critical('Failed to commit events.')
 
@@ -1353,7 +1376,8 @@ class Importer(object):
                            "from %s to %s. The transferred data is currently\n "
                            "buffered in a file called '%s' - would you like to\n "
                            "keep it as a backup?" % (event_count, source.name.capitalize(), target.name.capitalize(), _CSV_FILE), "Keep file?"):
-
+            self.logging.info('Kept "%s" as a backup.' % _CSV_FILE)
+        else:
             try:
                 os.remove(download_buffer_path)  # delete the buffer file if requested
             except:  # pragma: nocover
@@ -1423,8 +1447,8 @@ class Importer(object):
                 'verbose': bool(cli.get('verbose', self.config.get('verbose', False))),  # verbose mode
                 'reset_ts': bool(cli.get('reset_ts', self.config.get('reset_timestamps', False))),  # whether to reset timestamps
                 'quiet': bool(cli.get('quiet', self.config.get('quiet', False))),  # quiet mode
-                'yes': bool(cli.get('yes', self.config.get('yes', False)))  # yes mode
-
+                'yes': bool(cli.get('yes', self.config.get('yes', False))),  # yes mode
+                'skip': cli.get('skip', 0) # skip some
             })) else 1
 
         except NotImplementedError as e:  # pragma: nocover

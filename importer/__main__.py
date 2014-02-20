@@ -133,6 +133,10 @@ parser.add_argument('--quiet', '-q', action='store_true',
 parser.add_argument('--verbose', '-v', action='count', dest='verbose', default=0,
                     help='be loud about everything')
 
+# option: skip n events
+parser.add_argument('--skip', '-s', dest='skip', type=int, required=False,
+                    help='skip n events')
+
 # option: print version and exit
 parser.add_argument('--version', '-V', action='version',
                     help='print importer\'s version and exit', version='importer %s' % '.'.join(map(unicode, __version__)))
